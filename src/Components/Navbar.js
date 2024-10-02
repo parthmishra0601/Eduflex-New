@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { LiaTimesSolid } from 'react-icons/lia';
-import { FaBars, FaSearch } from 'react-icons/fa';
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom
+import { FaBars } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom'; // Use useNavigate for programmatic navigation
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const navLinks = [
-    { to: "/", label: "Home" }, // Change href to to for Link
-    { to: "/courses", label: "Courses" }, // Change href to to for Link
+    { to: "/", label: "Home" },
+    { to: "/courses", label: "Courses" }
   ];
 
   const handleClick = () => {
@@ -21,19 +22,18 @@ const Navbar = () => {
 
   return (
     <div>
-      <nav className="w-full h-[8ch] bg-violet-500 flex items-center md:flex-row lg:px-28 md:px-16 sm:px-7 px-4 fixed top-0 z-50">
-        {/* Logo or Site Name */}
+      <nav className="w-full h-[6ch] bg-violet-500 flex items-center md:flex-row lg:px-28 md:px-16 sm:px-7 px-4 fixed top-0 z-50">
         <Link to="/" className="text-xl text-neutral-800 font-bold mr-14 cursor-pointer">
           <span>EduFlex</span>
         </Link>
-        {/* Mobile Menu Toggle Button */}
+
         <button
           onClick={handleClick}
           className="flex-1 lg:hidden text-neutral-600 hover:text-violet-600 ease-in-out duration-300 flex items-center justify-end"
         >
           {open ? <LiaTimesSolid className="text-xl" /> : <FaBars className="text-xl" />}
         </button>
-        {/* Navigation Links */}
+
         <div
           className={`${
             open
@@ -49,13 +49,9 @@ const Navbar = () => {
                 </Link>
               </li>
             ))}
-           
           </ul>
-          {/* Login and Sign-Up Buttons */}
-          <div className="flex ml-auto gap-4">
-           
-           
-          </div>
+
+       
         </div>
       </nav>
     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
- 
+import { Link } from 'react-router-dom';
 
 const Home = () => {
   return (
@@ -11,12 +11,14 @@ const Home = () => {
         <h2 className="md:text-2xl font-medium mt-4">
           Empower Your Learning, Anywhere, Anytime
         </h2>
-        <button className="mt-6 px-4 py-2 bg-gray-800 text-white rounded">
-          Get Started
-        </button>
+        <Link to="/courses">
+          <button className="bg-gray-700  text-white font-bold py-2 px-4 rounded">
+            Get Started
+          </button>
+        </Link>
       </div>
       <div className="right mr-[0px] mt-[20px] h-[470px]">
-      <img src='Studying5.jpg' className="w-[400px] h-[515px]"></img>
+        <img src='Studying5.jpg' className="w-[400px] h-[515px]"></img>
       </div>
     </div>
   );
