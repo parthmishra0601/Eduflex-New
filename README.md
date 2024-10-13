@@ -31,4 +31,4 @@ Progress Tracking: Keep track of your learning progress with features that let y
 
 Community Engagement: Connect with other learners, share insights, and participate in discussions related to the courses you're taking.
 
-EduFlex is committed to helping you achieve your learning goals with personalized, AI-powered
+EduFlex is committed to helping you achieve your learning goals with personalized, AI-powered course recommendations.
