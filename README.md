@@ -1,4 +1,5 @@
 EduFlex: Your Personalized Path to Learning
+
 EduFlex is more than just a course recommendation website; it's a personalized learning journey powered by AI. Designed with learners of all levels in mind, EduFlex aims to connect you with the perfect courses to achieve your educational goals.
 
 How does it work?
