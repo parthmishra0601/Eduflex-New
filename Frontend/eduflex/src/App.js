@@ -29,7 +29,7 @@ function App() {
 
 function AppContent() {
   const location = useLocation();
-  const hideSidebarRoutes = ["/login", "/signup", "/avatar"];
+  const hideSidebarRoutes = ["/login", "/signup", "/avatar","/discussions"];
   const showSidebar = !hideSidebarRoutes.includes(location.pathname);
 
   return (

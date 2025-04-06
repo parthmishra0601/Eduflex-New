@@ -13,11 +13,12 @@ const QuizzesPage = () => {
   const [recommendedCourses, setRecommendedCourses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(true);
+  const backendUrl = "http://127.0.0.1:5000"; // Define your backend URL
 
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const res = await axios.get("http://127.0.0.1:5000/subjects");
+        const res = await axios.get(`${backendUrl}/subjects`);
         setSubjects(res.data);
       } catch (error) {
         console.error("Error fetching subjects:", error);
@@ -29,7 +30,7 @@ const QuizzesPage = () => {
 
   const fetchQuiz = async (selectedSubject) => {
     try {
-      const res = await axios.post("http://127.0.0.1:5000/get-quiz", {
+      const res = await axios.post(`${backendUrl}/get-quiz`, {
         subject: selectedSubject,
       });
       setQuestions(res.data.questions);
@@ -40,14 +41,22 @@ const QuizzesPage = () => {
     }
   };
 
+  const handleAnswerSelect = (questionIndex, selectedOption) => {
+    // Extract the answer value (e.g., "A", "B") from the option string
+    const answerValue = selectedOption.split(") ")[0];
+    setAnswers((prev) => ({ ...prev, [questionIndex]: answerValue }));
+  };
+
   const handleSubmitQuiz = async () => {
     try {
-      const res = await axios.post("http://127.0.0.1:5000/submit-quiz", {
+      console.log("Submitting answers:", answers); // Log answers before submission
+      const res = await axios.post(`${backendUrl}/submit-quiz`, {
         name,
         age,
         subject,
         answers,
       });
+      console.log("Backend response:", res.data); // Log the backend response
       setScore(res.data.score);
       setDifficulty(res.data.difficulty);
       setRecommendedCourses(res.data.recommended_courses);
@@ -125,11 +134,9 @@ const QuizzesPage = () => {
                     {q.options.map((opt, idx) => (
                       <button
                         key={idx}
-                        onClick={() =>
-                          setAnswers((prev) => ({ ...prev, [index]: opt }))
-                        }
+                        onClick={() => handleAnswerSelect(index, opt)}
                         className={`p-3 rounded-lg border transition-all ${
-                          answers[index] === opt
+                          answers[index] === opt.split(") ")[0] // Compare only the answer value
                             ? "bg-blue-100 border-blue-500"
                             : "bg-white hover:bg-gray-100 border-gray-300"
                         }`}
@@ -141,14 +148,16 @@ const QuizzesPage = () => {
                 </div>
               ))
             ) : (
-              <p>No questions found.</p>
+              <p>No questions found for this subject.</p>
             )}
-            <button
-              onClick={handleSubmitQuiz}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
-            >
-              Submit Quiz ✅
-            </button>
+            {questions.length > 0 && (
+              <button
+                onClick={handleSubmitQuiz}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+              >
+                Submit Quiz ✅
+              </button>
+            )}
           </div>
         )}
 
@@ -157,7 +166,7 @@ const QuizzesPage = () => {
           <div className="space-y-6 text-center">
             <div className="bg-white/70 rounded-xl p-6 shadow-inner">
               <h2 className="text-3xl font-bold text-green-700">
-                🎯 {name}, Your Score: {score ? score.toFixed(2) : 0}%
+                🎯 {name}, Your Score: {score !== null ? score.toFixed(2) : 0}%
               </h2>
               <p className="text-lg text-gray-700">Age: {age}</p>
               <p className="text-lg text-gray-700">
@@ -196,7 +205,7 @@ const QuizzesPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">No recommendations found.</p>
+                <p className="text-gray-600">No recommendations found based on your quiz performance.</p>
               )}
             </div>
           </div>
