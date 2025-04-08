@@ -1,22 +1,39 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { auth, provider, signInWithPopup } from "../firebase";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 const Login = () => {
+  const [error, setError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  // Handle Manual Login
+  const handleManualLogin = async (e) => {
     e.preventDefault();
     setError("");
-
-    // Simulated login (replace with actual auth logic)
-    if (email === "test@example.com" && password === "password123") {
-      alert("Login Successful!");
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      alert(`Welcome, ${user.email}`);
       navigate("/avatar");
-    } else {
+    } catch (err) {
       setError("Invalid email or password!");
+      console.error(err);
+    }
+  };
+
+  // Handle Google Login
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      alert(`Welcome, ${user.displayName}`);
+      navigate("/avatar");
+    } catch (err) {
+      setError("Google sign-in failed!");
+      console.error(err);
     }
   };
 
@@ -26,11 +43,10 @@ const Login = () => {
         <h2 className="text-3xl font-bold text-white text-center mb-2">Welcome Back!</h2>
         <p className="text-white text-center mb-6 opacity-80">Login to your account</p>
 
-        {error && (
-          <p className="text-red-400 text-center mb-4 font-medium">{error}</p>
-        )}
+        {error && <p className="text-red-400 text-center mb-4 font-medium">{error}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Manual Login Form */}
+        <form onSubmit={handleManualLogin} className="space-y-4 mb-4">
           <InputField
             label="Email"
             type="email"
@@ -49,9 +65,23 @@ const Login = () => {
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 rounded-lg hover:scale-105 transition-transform duration-300 shadow-lg font-semibold"
           >
-            Login
+            Login with Email
           </button>
         </form>
+
+        <div className="flex items-center my-4">
+          <hr className="flex-grow border-white/30" />
+          <span className="mx-2 text-white opacity-70 text-sm">or</span>
+          <hr className="flex-grow border-white/30" />
+        </div>
+
+        {/* Google Login */}
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full bg-white text-black py-2 rounded-lg hover:scale-105 transition-transform duration-300 shadow-lg font-semibold mb-2"
+        >
+          Sign in with Google
+        </button>
 
         <p className="text-center text-white text-sm mt-6 opacity-80">
           Don&apos;t have an account?{" "}
@@ -64,7 +94,7 @@ const Login = () => {
   );
 };
 
-// 🔁 Reusable Input Field Component
+// Reusable Input Component
 const InputField = ({ label, type, value, onChange, placeholder }) => (
   <div>
     <label className="block text-white text-sm font-medium mb-1">{label}</label>

@@ -1,36 +1,81 @@
 import React, { useState, useEffect } from 'react';
 
-const Progress = () => {
-  const [progressData, setProgressData] = useState([
-    { id: 1, course: 'React Fundamentals', completed: 75 },
-    { id: 2, course: 'Node.js Basics', completed: 40 },
-    { id: 3, course: 'MongoDB Essentials', completed: 90 },
-    { id: 4, course: 'JavaScript Advanced', completed: 20 },
-  ]);
+// Dummy data simulating AI recommended courses and their progress
+const recommendedCourses = [
+  {
+    course: 'React Fundamentals',
+    progress: 75,
+    studyTime: [3, 2, 4, 1, 5, 0, 2],
+  },
+  {
+    course: 'Node.js Basics',
+    progress: 40,
+    studyTime: [1, 1, 3, 2, 2, 0, 1],
+  },
+  {
+    course: 'MongoDB Essentials',
+    progress: 90,
+    studyTime: [4, 3, 2, 5, 3, 1, 2],
+  },
+  {
+    course: 'JavaScript Advanced',
+    progress: 20,
+    studyTime: [0, 1, 2, 1, 2, 0, 0],
+  },
+];
 
-  const [studyTime, setStudyTime] = useState([
-    { id: 1, day: 'Mon', hours: 3 },
-    { id: 2, day: 'Tue', hours: 2 },
-    { id: 3, day: 'Wed', hours: 4 },
-    { id: 4, day: 'Thu', hours: 1 },
-    { id: 5, day: 'Fri', hours: 5 },
-    { id: 6, day: 'Sat', hours: 0 },
-    { id: 7, day: 'Sun', hours: 2 },
-  ]);
+const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const Progress = () => {
+  const [selectedCourse, setSelectedCourse] = useState(recommendedCourses[0]);
+  const [progressData, setProgressData] = useState([]);
+  const [studyTime, setStudyTime] = useState([]);
+
+  useEffect(() => {
+    // Simulate fetching AI recommended course progress
+    setProgressData([
+      { id: 1, course: selectedCourse.course, completed: selectedCourse.progress },
+    ]);
+
+    const time = selectedCourse.studyTime.map((hours, index) => ({
+      id: index + 1,
+      day: daysOfWeek[index],
+      hours,
+    }));
+    setStudyTime(time);
+  }, [selectedCourse]);
 
   const calculateTotalStudyTime = () => {
     return studyTime.reduce((total, day) => total + day.hours, 0);
   };
-
-  useEffect(() => {
-    // Fetching logic here (if needed)
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-indigo-100 to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-10 text-gray-800 dark:text-white">
       <h1 className="text-4xl font-bold mb-10 text-indigo-800 dark:text-white">
         📈 Progress Tracker
       </h1>
+
+      {/* Course Selector */}
+      <div className="mb-8">
+        <label className="block mb-2 text-lg font-medium text-indigo-700 dark:text-indigo-300">
+          🎯 Select a Course
+        </label>
+        <select
+          className="p-3 rounded-xl bg-white dark:bg-gray-800 text-indigo-800 dark:text-white shadow"
+          onChange={(e) =>
+            setSelectedCourse(
+              recommendedCourses.find((course) => course.course === e.target.value)
+            )
+          }
+          value={selectedCourse.course}
+        >
+          {recommendedCourses.map((course, index) => (
+            <option key={index} value={course.course}>
+              {course.course}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Course Progress Section */}
       <div className="mb-12">

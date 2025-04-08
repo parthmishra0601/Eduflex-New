@@ -4,12 +4,12 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Add logout logic here (clearing user session/token if needed)
+    // Add logout logic here
     navigate("/login");
   };
 
   return (
-    <div className="h-screen w-64 bg-gray-900 text-white flex flex-col justify-between p-4">
+    <div className="h-screen w-64 bg-gray-900 text-white flex flex-col p-4">
       <div>
         {/* Profile Section */}
         <div className="mb-8 flex items-center">
@@ -32,10 +32,13 @@ const Sidebar = () => {
         </nav>
       </div>
 
+      {/* Spacer to push logout down only if there's extra space */}
+      <div className="flex-grow" />
+
       {/* Logout Button */}
       <button
         onClick={handleLogout}
-        className="w-full mt-8 p-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
+        className="w-full p-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
       >
         🚪 Logout
       </button>
@@ -43,7 +46,6 @@ const Sidebar = () => {
   );
 };
 
-// Reusable Sidebar Link Component
 const SidebarLink = ({ to, label }) => (
   <Link
     to={to}

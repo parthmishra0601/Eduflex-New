@@ -62,6 +62,12 @@ def standardize_subjects(subject):
         return 'data science'
     elif 'business' in subject or 'management' in subject or 'finance' in subject:
         return 'business'
+    elif 'project' in subject:
+        return 'project management'
+    elif 'design' in subject or 'ui' in subject or 'ux' in subject:
+        return 'design'
+    elif 'marketing' in subject or 'sales' in subject or 'advertising' in subject:
+        return 'marketing'
     else:
         return 'other'
 
@@ -131,6 +137,21 @@ quiz_questions = {
         ("What color is the sky on a clear day?", ["A) Green", "B) Blue", "C) Red", "D) Yellow"], "B"),
         ("What is the chemical symbol for water?", ["A) Wo", "B) Wa", "C) H2O", "D) HO2"], "C"),
         ("Which planet is known as the 'Red Planet'?", ["A) Venus", "B) Mars", "C) Jupiter", "D) Saturn"], "B"),
+    ],
+    'project management': [
+        ("What is a Gantt chart primarily used for?", ["A) Budgeting", "B) Scheduling", "C) Risk assessment", "D) Communication"], "B"),
+        ("Which project management methodology emphasizes iterative development and collaboration?", ["A) Waterfall", "B) Agile", "C) PRINCE2", "D) Critical Path Method"], "B"),
+        ("What does WBS stand for in project management?", ["A) Work Breakdown Structure", "B) Workflow Business System", "C) Web-Based Software", "D) Whole Business Strategy"], "A"),
+    ],
+    'design': [
+        ("What is the rule of thirds in visual design?", ["A) Dividing an image into three equal parts", "B) Using three primary colors", "C) Balancing three elements in a composition", "D) Creating a hierarchy with three levels"], "A"),
+        ("Which design principle refers to the arrangement of elements to create a sense of stability?", ["A) Contrast", "B) Alignment", "C) Balance", "D) Hierarchy"], "C"),
+        ("What does UX stand for in design?", ["A) User Experience", "B) Unique Expression", "C) Universal eXchange", "D) Ultimate Execution"], "A"),
+    ],
+    'marketing': [
+        ("What is the primary goal of content marketing?", ["A) To directly sell products", "B) To build brand awareness and trust", "C) To generate immediate leads", "D) To improve search engine rankings quickly"], "B"),
+        ("Which of the following is NOT a part of the marketing mix (the 4 Ps)?", ["A) Product", "B) Price", "C) Promotion", "D) People"], "D"),
+        ("What does SEO stand for?", ["A) Search Engine Optimization", "B) Social Engagement Optimization", "C) Sales and Earnings Overview", "D) Strategic Enterprise Output"], "A"),
     ],
 }
 
