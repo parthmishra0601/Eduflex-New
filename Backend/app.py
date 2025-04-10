@@ -1,47 +1,50 @@
-# backend.py (using Flask)
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
+from flask_cors import CORS
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-from tabulate import tabulate  # You might not need this for the API
 import logging
+import requests
+import html
+import random
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
-# Configure logging
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load your datasets (ensure the paths are correct for your backend environment)
+# Load datasets
 try:
     courses_data = pd.read_csv('courses.csv')
     grades_data = pd.read_csv('grades.csv')
-    logger.info("Courses and grades data loaded successfully.")
+    logger.info("Datasets loaded successfully.")
 except FileNotFoundError as e:
-    logger.error(f"Error loading data: {e}")
+    logger.error(f"File not found: {e}")
     exit()
 
-# Identify the correct subject-related column
-subject_column = None
-if 'category' in courses_data.columns:
-    subject_column = 'category'
-elif 'sub_category' in courses_data.columns:
-    subject_column = 'sub_category'
-elif 'course_type' in courses_data.columns:
-    subject_column = 'course_type'
-
-if subject_column is None:
-    logger.error("No valid column found for subjects. Please check your dataset.")
+# Identify subject column in courses data
+subject_column_courses = next((col for col in ['category', 'sub_category', 'course_type'] if col in courses_data.columns), None)
+if not subject_column_courses:
+    logger.error("No subject column found in courses data.")
     exit()
+
+# Identify subject and grade columns in grades data
+if 'Preferred Subject' in grades_data.columns and 'Proficiency' in grades_data.columns:
+    subject_column_grades = 'Preferred Subject'
+    grade_column_grades = 'Proficiency'
+elif 'subject' in grades_data.columns and 'grade' in grades_data.columns:
+    subject_column_grades = 'subject'
+    grade_column_grades = 'grade'
 else:
-    logger.info(f"Using '{subject_column}' as the subject column.")
+    logger.error("Subject and grade columns not found in grades data.")
+    exit()
 
-# Handle missing values
+# Fill missing values
 courses_data.fillna('', inplace=True)
 
-# Standardize subjects
+# Subject standardization
 def standardize_subjects(subject):
     subject = str(subject).lower()
     if 'health' in subject:
@@ -50,7 +53,7 @@ def standardize_subjects(subject):
         return 'information technology'
     elif 'math' in subject or 'logic' in subject:
         return 'math and logic'
-    elif 'arts' in subject or 'humanities' in subject or 'literature' in subject:
+    elif 'arts' in subject or 'humanities' in subject:
         return 'arts and humanities'
     elif 'social science' in subject or 'psychology' in subject or 'history' in subject:
         return 'social sciences'
@@ -71,101 +74,82 @@ def standardize_subjects(subject):
     else:
         return 'other'
 
-# Apply standardization
-courses_data[subject_column] = courses_data[subject_column].apply(standardize_subjects)
+courses_data[subject_column_courses] = courses_data[subject_column_courses].apply(standardize_subjects)
 
-# Combine text data for vectorization
+# Create combined text for TF-IDF
 courses_data['combined_text'] = (
     courses_data['course_name'].astype(str) + " " +
-    courses_data[subject_column].astype(str) + " " +
+    courses_data[subject_column_courses].astype(str) + " " +
     courses_data['course_level'].astype(str)
 )
 
-# TF-IDF Vectorizer (initialize this globally so it's fitted once)
+# TF-IDF setup
 tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(courses_data['combined_text'])
-logger.info("TF-IDF vectorizer fitted.")
 
-# Quiz questions
-quiz_questions = {
-    'data science': [
-        ("What is the most commonly used library for data visualization in Python?", ["A) Pandas", "B) Matplotlib", "C) NumPy", "D) Seaborn"], "B"),
-        ("Which of these is used for supervised learning?", ["A) K-Means", "B) Linear Regression", "C) DBSCAN", "D) Apriori"], "B"),
-        ("Which language is best suited for machine learning?", ["A) Python", "B) C++", "C) Java", "D) Swift"], "A"),
-    ],
-    'computer science': [
-        ("What does OOP stand for?", ["A) Object-Oriented Programming", "B) Open Online Programming", "C) Overlapping Object Processing", "D) None"], "A"),
-        ("What is the time complexity of binary search?", ["A) O(n)", "B) O(n^2)", "C) O(log n)", "D) O(1)"], "C"),
-        ("Which sorting algorithm has the best average-case time complexity?", ["A) Bubble Sort", "B) Merge Sort", "C) Quick Sort", "D) Selection Sort"], "B"),
-    ],
-    'business': [
-        ("What is ROI?", ["A) Return on Investment", "B) Risk of Inflation", "C) Rate of Interest", "D) Revenue of Industry"], "A"),
-        ("Which of these is a key financial statement?", ["A) Balance Sheet", "B) Business Plan", "C) Marketing Strategy", "D) SWOT Analysis"], "A"),
-        ("What does KPI stand for?", ["A) Key Performance Indicator", "B) Knowledge Process Integration", "C) Key Productivity Index", "D) Kinetic Process Implementation"], "A"),
-    ],
-    'health': [
-        ("What is the basic structural and functional unit of life?", ["A) Tissue", "B) Organ", "C) Cell", "D) Organ System"], "C"),
-        ("Which vitamin is essential for blood clotting?", ["A) Vitamin A", "B) Vitamin C", "C) Vitamin D", "D) Vitamin K"], "D"),
-        ("What is the normal resting heart rate for adults?", ["A) 40-60 bpm", "B) 60-100 bpm", "C) 100-120 bpm", "D) 120-140 bpm"], "B"),
-    ],
-    'information technology': [
-        ("What does CPU stand for?", ["A) Central Processing Unit", "B) Computer Programming Utility", "C) Common Protocol Unit", "D) Control Processing Unit"], "A"),
-        ("What is RAM?", ["A) Read Only Memory", "B) Random Access Memory", "C) Redundant Array of Memory", "D) Registered Access Module"], "B"),
-        ("What is the purpose of a firewall?", ["A) To speed up internet connection", "B) To protect a network from unauthorized access", "C) To organize files on a computer", "D) To enhance graphics performance"], "B"),
-    ],
-    'math and logic': [
-        ("What is the value of pi (π) to two decimal places?", ["A) 3.10", "B) 3.14", "C) 3.16", "D) 3.20"], "B"),
-        ("What is the square root of 144?", ["A) 10", "B) 12", "C) 14", "D) 16"], "B"),
-        ("If A is true and B is false, what is the result of A AND B?", ["A) True", "B) False", "C) Undefined", "D) Cannot be determined"], "B"),
-    ],
-    'arts and humanities': [
-        ("Who painted the Mona Lisa?", ["A) Vincent van Gogh", "B) Leonardo da Vinci", "C) Pablo Picasso", "D) Claude Monet"], "B"),
-        ("Which ancient civilization built the Great Pyramids of Giza?", ["A) Roman", "B) Greek", "C) Egyptian", "D) Mesopotamian"], "C"),
-        ("Who wrote the play 'Hamlet'?", ["A) William Shakespeare", "B) Jane Austen", "C) Charles Dickens", "D) George Bernard Shaw"], "A"),
-    ],
-    'social sciences': [
-        ("What is the study of human society and social relationships called?", ["A) Psychology", "B) Anthropology", "C) Sociology", "D) Economics"], "C"),
-        ("What event is considered the start of World War I?", ["A) Invasion of Poland", "B) Attack on Pearl Harbor", "C) Assassination of Archduke Franz Ferdinand", "D) Treaty of Versailles"], "C"),
-        ("What is a form of government in which the people hold the power to rule?", ["A) Monarchy", "B) Oligarchy", "C) Democracy", "D) Autocracy"], "C"),
-    ],
-    'language learning': [
-        ("In Spanish, what does 'Hola' mean?", ["A) Goodbye", "B) Thank you", "C) Hello", "D) Please"], "C"),
-        ("In French, how do you say 'good morning'?", ["A) Bonjour", "B) Au revoir", "C) Merci", "D) S'il vous plaît"], "A"),
-        ("In German, what does 'Danke' mean?", ["A) Yes", "B) No", "C) Thank you", "D) You're welcome"], "C"),
-    ],
-    'other': [
-        ("What color is the sky on a clear day?", ["A) Green", "B) Blue", "C) Red", "D) Yellow"], "B"),
-        ("What is the chemical symbol for water?", ["A) Wo", "B) Wa", "C) H2O", "D) HO2"], "C"),
-        ("Which planet is known as the 'Red Planet'?", ["A) Venus", "B) Mars", "C) Jupiter", "D) Saturn"], "B"),
-    ],
-    'project management': [
-        ("What is a Gantt chart primarily used for?", ["A) Budgeting", "B) Scheduling", "C) Risk assessment", "D) Communication"], "B"),
-        ("Which project management methodology emphasizes iterative development and collaboration?", ["A) Waterfall", "B) Agile", "C) PRINCE2", "D) Critical Path Method"], "B"),
-        ("What does WBS stand for in project management?", ["A) Work Breakdown Structure", "B) Workflow Business System", "C) Web-Based Software", "D) Whole Business Strategy"], "A"),
-    ],
-    'design': [
-        ("What is the rule of thirds in visual design?", ["A) Dividing an image into three equal parts", "B) Using three primary colors", "C) Balancing three elements in a composition", "D) Creating a hierarchy with three levels"], "A"),
-        ("Which design principle refers to the arrangement of elements to create a sense of stability?", ["A) Contrast", "B) Alignment", "C) Balance", "D) Hierarchy"], "C"),
-        ("What does UX stand for in design?", ["A) User Experience", "B) Unique Expression", "C) Universal eXchange", "D) Ultimate Execution"], "A"),
-    ],
-    'marketing': [
-        ("What is the primary goal of content marketing?", ["A) To directly sell products", "B) To build brand awareness and trust", "C) To generate immediate leads", "D) To improve search engine rankings quickly"], "B"),
-        ("Which of the following is NOT a part of the marketing mix (the 4 Ps)?", ["A) Product", "B) Price", "C) Promotion", "D) People"], "D"),
-        ("What does SEO stand for?", ["A) Search Engine Optimization", "B) Social Engagement Optimization", "C) Sales and Earnings Overview", "D) Strategic Enterprise Output"], "A"),
-    ],
+# Subject to OpenTDB category mapping
+subject_category_mapping = {
+    'data science': 18,
+    'computer science': 30,
+    'business': 18,
+    'health': 21,
+    'information technology': 30,
+    'math and logic': 19,
+    'arts and humanities': 25,
+    'social sciences': 23,
+    'language learning': 26,
+    'other': 9,
+    'project management': 18,
+    'design': 25,
+    'marketing': 27
 }
 
-def determine_difficulty(score):
-    """Determines the difficulty level based on test score."""
-    if score < 50:
-        return "beginner"
-    elif 50 <= score <= 75:
-        return "intermediate"
-    else:
-        return "advanced"
+# Fetch quiz questions
+def fetch_realtime_quiz(subject, num_questions=3):
+    if subject not in subject_category_mapping:
+        return None
+    category_id = subject_category_mapping[subject]
+    api_url = f"https://opentdb.com/api.php?amount={num_questions}&category={category_id}&type=multiple"
 
+    try:
+        response = requests.get(api_url)
+        response.raise_for_status()
+        data = response.json()
+        if data['response_code'] == 0:
+            questions_data = []
+            for q in data['results']:
+                question_text = html.unescape(q['question'])
+                correct_answer = html.unescape(q['correct_answer'])
+                incorrect_answers = [html.unescape(ans) for ans in q['incorrect_answers']]
+                options = incorrect_answers + [correct_answer]
+                random.shuffle(options)
+                correct_option = chr(65 + options.index(correct_answer))  # A, B, C, D
+                questions_data.append({
+                    "question": question_text,
+                    "options": [f"{chr(65 + i)}) {opt}" for i, opt in enumerate(options)],
+                    "correct_answer": correct_option
+                })
+            return questions_data
+        return None
+    except Exception as e:
+        logger.error(f"Quiz API error: {e}")
+        return None
+
+# Determine difficulty
+def determine_difficulty(score):
+    try:
+        score = int(score)
+        if score < 50:
+            return "beginner"
+        elif 50 <= score <= 75:
+            return "intermediate"
+        else:
+            return "advanced"
+    except:
+        return "beginner"
+
+# Recommend courses
 def recommend_courses(preferred_subjects, difficulty_level, tfidf_matrix, courses_data, top_n=5):
-    """Recommend courses based on preferred subjects and difficulty level."""
     student_profile_vectors = tfidf.transform(preferred_subjects)
     cosine_similarities = linear_kernel(student_profile_vectors, tfidf_matrix)
     avg_similarities = cosine_similarities.mean(axis=0)
@@ -179,68 +163,73 @@ def recommend_courses(preferred_subjects, difficulty_level, tfidf_matrix, course
 
     recommended_courses = recommended_courses.sort_values(by='course_rating', ascending=False)
 
-    return recommended_courses[['course_name', 'course_link', subject_column, 'course_rating', 'category']] # Include 'category'
+    return recommended_courses[['course_name', 'course_link', subject_column_courses, 'course_rating', 'category']]
+
+# API Endpoints
+@app.route('/upload-gradesheet', methods=['POST'])
+def upload_gradesheet():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    try:
+        df = pd.read_csv(file)
+        # You can log or analyze the data if needed
+        logger.info("Gradesheet uploaded successfully.")
+        logger.info(df.head())  # Optional: view uploaded data
+        return jsonify({"message": "Gradesheet uploaded successfully."})
+    except Exception as e:
+        logger.error(f"Error processing gradesheet: {e}")
+        return jsonify({"error": "Failed to process file"}), 500
 
 @app.route('/subjects', methods=['GET'])
 def get_available_subjects():
-    """Returns a list of available quiz subjects."""
-    return jsonify(list(quiz_questions.keys()))
+    return jsonify(list(subject_category_mapping.keys()))
+    
 
 @app.route('/get-quiz', methods=['POST'])
 def get_quiz_questions():
-    """Returns quiz questions for a given subject."""
     data = request.get_json()
     subject = data.get('subject')
-    if not subject or subject not in quiz_questions:
-        return jsonify({"error": "No quiz available for this subject"}), 400
-    questions_data = []
-    for question, options, _ in quiz_questions[subject]:
-        questions_data.append({"question": question, "options": options})
-    return jsonify({"questions": questions_data})
+    if not subject or subject not in subject_category_mapping:
+        return jsonify({"error": "Invalid subject"}), 400
+
+    questions = fetch_realtime_quiz(subject)
+    if questions:
+        return jsonify({"questions": questions})
+    return jsonify({"error": "Could not fetch quiz questions"}), 500
 
 @app.route('/submit-quiz', methods=['POST'])
 def submit_quiz():
-    """Calculates the quiz score, determines difficulty, and recommends courses."""
     data = request.get_json()
     name = data.get('name')
     age = data.get('age')
     subject = data.get('subject')
     user_answers = data.get('answers')
+    submitted_questions = data.get('submitted_questions')
 
-    logger.info(f"Received quiz submission for subject: {subject}, answers: {user_answers}")
-
-    if not name or not age or not subject or not user_answers:
-        logger.warning("Missing required data in quiz submission.")
+    if not name or not age or not subject or not user_answers or not submitted_questions:
         return jsonify({"error": "Missing required data"}), 400
 
-    if subject not in quiz_questions:
-        logger.warning(f"No quiz available for subject: {subject}")
-        return jsonify({"error": "No quiz available for this subject"}), 400
-
-    questions_with_answers = quiz_questions[subject]
     correct_answers = 0
-    for i, (_, _, correct_answer) in enumerate(questions_with_answers):
-        question_index_str = str(i)
-        if question_index_str in user_answers:
-            user_answer = user_answers[question_index_str]
-            logger.info(f"Question {i}: Correct Answer='{correct_answer}', User Answer='{user_answer}'")
-            if user_answer.strip().upper() == correct_answer.strip().upper():  # Case-insensitive and whitespace handling
-                correct_answers += 1
-        else:
-            logger.info(f"Question {i}: No answer provided by user.")
+    for i, question in enumerate(submitted_questions):
+        user_answer = user_answers.get(str(i), '').strip().upper()
+        correct_option = question.get('correct_answer', '').strip().upper()
+        if user_answer == correct_option:
+            correct_answers += 1
 
-    total_questions = len(questions_with_answers)
-    score = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
-    difficulty_level = determine_difficulty(score)
-    recommended_courses_df = recommend_courses([subject], difficulty_level, tfidf_matrix, courses_data)
-    recommended_courses_data = recommended_courses_df.to_dict('records')
-
-    logger.info(f"Quiz Result: Score={score:.2f}%, Difficulty='{difficulty_level}'")
+    score = (correct_answers / len(submitted_questions)) * 100 if submitted_questions else 0
+    difficulty = determine_difficulty(score)
+    recommended_courses_df = recommend_courses([subject], difficulty, tfidf_matrix, courses_data)
+    recommended_courses = recommended_courses_df.to_dict(orient='records')
 
     return jsonify({
         "score": score,
-        "difficulty": difficulty_level,
-        "recommended_courses": recommended_courses_data
+        "difficulty": difficulty,
+        "recommended_courses": recommended_courses
     })
 
 if __name__ == '__main__':

@@ -49,14 +49,16 @@ const QuizzesPage = () => {
 
   const handleSubmitQuiz = async () => {
     try {
-      console.log("Submitting answers:", answers); // Log answers before submission
+      console.log("Submitting answers:", answers);
+      console.log("Submitting questions:", questions); // Log questions before submission
       const res = await axios.post(`${backendUrl}/submit-quiz`, {
         name,
         age,
         subject,
         answers,
+        submitted_questions: questions, // Include the 'questions' state here
       });
-      console.log("Backend response:", res.data); // Log the backend response
+      console.log("Backend response:", res.data);
       setScore(res.data.score);
       setDifficulty(res.data.difficulty);
       setRecommendedCourses(res.data.recommended_courses);

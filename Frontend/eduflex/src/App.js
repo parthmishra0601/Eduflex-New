@@ -29,13 +29,13 @@ function App() {
 
 function AppContent() {
   const location = useLocation();
-  const hideSidebarRoutes = ["/login", "/signup", "/avatar","/discussions"];
+  const hideSidebarRoutes = ["/login", "/signup", "/avatar", "/discussions"];
   const showSidebar = !hideSidebarRoutes.includes(location.pathname);
 
   return (
-    <div className="flex">
+    <div className="flex h-screen"> {/* Added h-screen to make the container take full viewport height */}
       {showSidebar && <Sidebar />}
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto"> {/* flex-1 makes it take remaining width, overflow-y for scrolling */}
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />

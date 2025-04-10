@@ -44,6 +44,10 @@ const recommendedCourses = [
 
 const Dashboard = () => {
   const [selectedCourse, setSelectedCourse] = useState(recommendedCourses[0]);
+  const [gradesheet, setGradesheet] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [weakestSubjects, setWeakestSubjects] = useState(null);
+  const [recommendationsFromGradesheet, setRecommendationsFromGradesheet] = useState(null);
 
   const chartOptions = {
     responsive: true,
@@ -150,6 +154,45 @@ const Dashboard = () => {
     },
   ];
 
+  const handleGradesheetUpload = (event) => {
+    setGradesheet(event.target.files[0]);
+  };
+
+  const submitGradesheet = async () => {
+    if (!gradesheet) {
+      setUploadStatus('Please select a gradesheet file.');
+      return;
+    }
+
+    setUploadStatus('Uploading...');
+    const formData = new FormData();
+    formData.append('gradesheet', gradesheet);
+
+    try {
+      const response = await fetch('http://localhost:5000/upload-gradesheet', { // Adjust the backend URL if needed
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUploadStatus('Gradesheet uploaded and analyzed successfully!');
+        setWeakestSubjects(data.weakest_subjects);
+        setRecommendationsFromGradesheet(data.recommendations_based_on_weakness);
+      } else {
+        setUploadStatus(`Upload failed: ${data.error || 'An error occurred'}`);
+        setWeakestSubjects(null);
+        setRecommendationsFromGradesheet(null);
+      }
+    } catch (error) {
+      console.error('Error uploading gradesheet:', error);
+      setUploadStatus('Error uploading gradesheet.');
+      setWeakestSubjects(null);
+      setRecommendationsFromGradesheet(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <h1 className="text-4xl font-bold mb-8 text-indigo-800">📊 Dashboard</h1>
@@ -169,6 +212,61 @@ const Dashboard = () => {
           ))}
         </select>
       </div>
+
+      <motion.div
+        className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-6 mb-6 border border-indigo-100"
+        variants={cardVariants}
+        initial="hidden"
+        animate="visible"
+        custom={cards.length} // Ensure this card animates after the others
+        whileHover={{ scale: 1.03 }}
+      >
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">Upload Gradesheet</h2>
+        <div className="flex items-center space-x-4">
+          <input
+            type="file"
+            accept="image/*, .pdf, .txt, .csv"
+            onChange={handleGradesheetUpload}
+            className="shadow-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          />
+          <button
+            onClick={submitGradesheet}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={!gradesheet}
+          >
+            Analyze Gradesheet
+          </button>
+        </div>
+        {uploadStatus && <p className="mt-2 text-sm text-gray-600">{uploadStatus}</p>}
+        {weakestSubjects && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Weakest Subjects:</h3>
+            <ul className="list-disc list-inside">
+              {Object.entries(weakestSubjects).map(([subject, score]) => (
+                <li key={subject}>{subject}: {score}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {recommendationsFromGradesheet && recommendationsFromGradesheet.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Course Recommendations based on Weakest Subjects:</h3>
+            <ul>
+              {recommendationsFromGradesheet.map((course) => (
+                <li key={course.course_name} className="mb-2">
+                  <strong className="block font-medium text-indigo-700">{course.course_name}</strong>
+                  <span className="text-gray-600">Subject: {course[Object.keys(course).find(key => key.includes('category') || key.includes('sub_category') || key.includes('course_type'))]}</span>
+                  {course.course_rating && <span className="text-gray-600 ml-2">Rating: {course.course_rating}</span>}
+                  {course.course_link && <a href={course.course_link} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline ml-2">Learn More</a>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {recommendationsFromGradesheet && recommendationsFromGradesheet.length === 0 && weakestSubjects && (
+          <p className="mt-2 text-sm text-gray-600">No specific course recommendations found for the identified weakest subjects.</p>
+        )}
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {cards.map((card, index) => (
