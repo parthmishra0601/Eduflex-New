@@ -164,12 +164,12 @@ const Dashboard = () => {
       return;
     }
 
-    setUploadStatus('Uploading...');
+    setUploadStatus('Analyzing gradesheet...');
     const formData = new FormData();
-    formData.append('gradesheet', gradesheet);
+    formData.append('file', gradesheet);
 
     try {
-      const response = await fetch('http://localhost:5000/upload-gradesheet', { // Adjust the backend URL if needed
+      const response = await fetch('http://localhost:5000/upload-gradesheet', {
         method: 'POST',
         body: formData,
       });
@@ -177,17 +177,17 @@ const Dashboard = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setUploadStatus('Gradesheet uploaded and analyzed successfully!');
-        setWeakestSubjects(data.weakest_subjects);
-        setRecommendationsFromGradesheet(data.recommendations_based_on_weakness);
+        setUploadStatus('Gradesheet analyzed successfully!');
+        setWeakestSubjects(data.weakest_subject ? { [data.weakest_subject]: 'N/A' } : null);
+        setRecommendationsFromGradesheet(data.recommended_courses);
       } else {
-        setUploadStatus(`Upload failed: ${data.error || 'An error occurred'}`);
+        setUploadStatus(`Analysis failed: ${data.error || 'Only CSV or Excel files are supported.'}`);
         setWeakestSubjects(null);
         setRecommendationsFromGradesheet(null);
       }
     } catch (error) {
-      console.error('Error uploading gradesheet:', error);
-      setUploadStatus('Error uploading gradesheet.');
+      console.error('Error analyzing gradesheet:', error);
+      setUploadStatus('Error analyzing gradesheet.');
       setWeakestSubjects(null);
       setRecommendationsFromGradesheet(null);
     }
@@ -218,14 +218,14 @@ const Dashboard = () => {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        custom={cards.length} // Ensure this card animates after the others
+        custom={cards.length}
         whileHover={{ scale: 1.03 }}
       >
         <h2 className="text-xl font-semibold mb-4 text-gray-900">Upload Gradesheet</h2>
         <div className="flex items-center space-x-4">
           <input
             type="file"
-            accept="image/*, .pdf, .txt, .csv"
+            accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={handleGradesheetUpload}
             className="shadow-sm border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
           />
@@ -240,17 +240,17 @@ const Dashboard = () => {
         {uploadStatus && <p className="mt-2 text-sm text-gray-600">{uploadStatus}</p>}
         {weakestSubjects && (
           <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">Weakest Subjects:</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Weakest Subject:</h3>
             <ul className="list-disc list-inside">
-              {Object.entries(weakestSubjects).map(([subject, score]) => (
-                <li key={subject}>{subject}: {score}</li>
+              {Object.entries(weakestSubjects).map(([subject]) => (
+                <li key={subject}>{subject}</li>
               ))}
             </ul>
           </div>
         )}
         {recommendationsFromGradesheet && recommendationsFromGradesheet.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2 text-gray-900">Course Recommendations based on Weakest Subjects:</h3>
+            <h3 className="text-lg font-semibold mb-2 text-gray-900">Course Recommendations based on Weakest Subject:</h3>
             <ul>
               {recommendationsFromGradesheet.map((course) => (
                 <li key={course.course_name} className="mb-2">
@@ -264,7 +264,7 @@ const Dashboard = () => {
           </div>
         )}
         {recommendationsFromGradesheet && recommendationsFromGradesheet.length === 0 && weakestSubjects && (
-          <p className="mt-2 text-sm text-gray-600">No specific course recommendations found for the identified weakest subjects.</p>
+          <p className="mt-2 text-sm text-gray-600">No specific course recommendations found for the identified weakest subject.</p>
         )}
       </motion.div>
 
