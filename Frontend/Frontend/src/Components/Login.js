@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth, provider, signInWithPopup } from "../firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
 
 const Login = () => {
   const [error, setError] = useState("");
@@ -9,31 +7,15 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // Handle Manual Login
-  const handleManualLogin = async (e) => {
+  // Handle Manual Login (without Firebase authentication)
+  const handleManualLogin = (e) => {
     e.preventDefault();
     setError("");
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      alert(`Welcome, ${user.email}`);
-      navigate("/avatar");
-    } catch (err) {
-      setError("Invalid email or password!");
-      console.error(err);
-    }
-  };
-
-  // Handle Google Login
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      alert(`Welcome, ${user.displayName}`);
-      navigate("/avatar");
-    } catch (err) {
-      setError("Google sign-in failed!");
-      console.error(err);
+    if (email && password) {
+      alert(`Welcome, ${email}`);
+      navigate("/avatar"); // ✅ Redirecting to avatar page
+    } else {
+      setError("Please enter both email and password!");
     }
   };
 
@@ -75,13 +57,12 @@ const Login = () => {
           <hr className="flex-grow border-white/30" />
         </div>
 
-        {/* Google Login */}
-        <button
-          onClick={handleGoogleLogin}
+        {/* Google Login (optional: can remove if not needed) */}
+        {/* <button
           className="w-full bg-white text-black py-2 rounded-lg hover:scale-105 transition-transform duration-300 shadow-lg font-semibold mb-2"
         >
           Sign in with Google
-        </button>
+        </button> */}
 
         <p className="text-center text-white text-sm mt-6 opacity-80">
           Don&apos;t have an account?{" "}

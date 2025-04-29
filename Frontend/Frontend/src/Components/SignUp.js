@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate(); // ✅ useNavigate hook
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,6 +15,10 @@ const Signup = () => {
     }
     console.log("Email:", email);
     console.log("Password:", password);
+    
+    // After successful signup
+    alert("Signup successful! Please login.");
+    navigate("/"); // ✅ redirect to login page (assuming "/" is login route)
   };
 
   return (
