@@ -77,7 +77,7 @@ networkx==3.4.2
 nltk==3.9.1
 notebook==7.3.3
 notebook_shim==0.2.4
-numpy==2.2.0
+numpy==1.24.0  # Adjusted for compatibility with scikit-learn and other libraries
 ollama==0.4.7
 outcome==1.3.0.post0
 overrides==7.7.0
@@ -114,8 +114,8 @@ rfc3339-validator==0.1.4
 rfc3986-validator==0.1.1
 rpds-py==0.23.1
 safetensors==0.5.3
-scikit-learn==1.6.0
-scipy==1.14.1
+scikit-learn==1.1.0  # Adjusted for compatibility with numpy and other dependencies
+scipy==1.10.0  # Adjusted for compatibility
 seaborn==0.13.2
 selenium==4.27.1
 Send2Trash==1.8.3
@@ -136,7 +136,7 @@ terminado==0.18.1
 threadpoolctl==3.5.0
 tinycss2==1.4.0
 tokenizers==0.21.1
-torch==2.6.0
+torch==2.1.0  # Adjusted for compatibility with other ML libraries
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
